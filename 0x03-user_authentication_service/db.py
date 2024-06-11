@@ -36,11 +36,14 @@ class DB:
         """
         returns a User object.
         """
-        user = User(email=email, hashed_password=hashed_password)
-
-        # add new user and commit to the database
-        self._session.add(user)
-        self._session.commit()
+        try:
+            user = User(email=email, hashed_password=hashed_password)
+            # add new user and commit to the database
+            self._session.add(user)
+            self._session.commit()
+        except Exception:
+            self._session.rollback()
+            user = None
         return user
 
     def find_user_by(self, **kwargs) -> User:
