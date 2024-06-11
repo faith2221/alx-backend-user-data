@@ -36,40 +36,32 @@ class DB:
         """
         returns a User object.
         """
-        try:
-            user = User(email=email, hashed_password=hashed_password)
-            # add new user and commit to the database
-            self._session.add(user)
-            self._session.commit()
-        except Exception:
-            self._session.rollback()
-            user = None
-        return user
+        new_user = User(email=email, hashed_password=hashed_password)
+        # add new user and commit to the database
+        self._session.add(new_user)
+        self._session.commit()
+        return new_user
 
     def find_user_by(self, **kwargs) -> User:
         """
         returns user.
         """
-        all_users = self._session.query(User)
-        for k, v in kwargs.items():
-            if k not in User.__dict__:
-                raise InvalidRequestError
-            for usr in all_users:
-                if getattr(usr, k) == v:
-                    return usr
-        raise NoResultFound
+        if not kwargs:
+            raise InvalidRequestError
+
+        user = self._session.query(User).filter_by(**kwargs).first()
+        if not user:
+            raise NoResultFound
+        return user
 
     def update_user(self, user_id: int, **kwargs) -> None:
         """
         updates the user attributes.
         """
-        try:
-            usr = self.find_user_by(id=user_id)
-        except NoResultFound:
-            raise ValueError()
-        for k, v in kwargs.items():
-            if hasattr(usr, k):
-                setattr(usr, k, v)
-            else:
+        user = self.find_user_by(id=user_id)
+        for key, value in kwargs.items():
+            if not hasattr(user, key):
                 raise ValueError
+            setattr(user, key, value)
         self._session.commit()
+        return None
